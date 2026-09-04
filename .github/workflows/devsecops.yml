@@ -3,7 +3,7 @@ name: Secure DevSecOps Pipeline
 on:
   push:
     branches:
-      - master
+      - main        # 👈 Screenshot me branch "main" hai, master nahi.
 
 permissions:
   contents: read
@@ -12,57 +12,48 @@ permissions:
 
 jobs:
   build_and_package:
-    name: Build • Test • CodeQL • Artifact
     runs-on: ubuntu-latest
 
+    defaults:
+      run:
+        working-directory: node-app
+
     strategy:
-      fail-fast: false
       matrix:
         language: [javascript-typescript]
 
     steps:
-      # Step 1 - Checkout Repository
-      - name: Checkout Source Code
+      - name: Checkout Code
         uses: actions/checkout@v4
 
-      # Step 2 - Setup Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
+          cache-dependency-path: node-app/package-lock.json
 
-      # Step 3 - Install Dependencies
       - name: Install Dependencies
         run: npm install
 
-      # Step 4 - Initialize CodeQL
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}
 
-      # Step 5 - Autobuild Project
-      - name: Autobuild Application
+      - name: Autobuild
         uses: github/codeql-action/autobuild@v3
 
-      # Step 6 - CodeQL Security Scan
-      - name: Run CodeQL Analysis
+      - name: Analyze CodeQL
         uses: github/codeql-action/analyze@v3
-        with:
-          category: "/language:${{ matrix.language }}"
 
-      # Step 7 - Run Unit Tests
       - name: Run Tests
-        run: |
-          echo "Running application tests..."
-          npm test --if-present
+        run: npm test --if-present
 
-      # Step 8 - Upload Artifact
-      - name: Upload Build Artifact
+      - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: nodejs-artifact
+          name: node-app-artifact
           path: |
-            package.json
-            package-lock.json
+            node-app/package.json
+            node-app/package-lock.json
